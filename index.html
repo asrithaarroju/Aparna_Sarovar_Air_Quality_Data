@@ -65,11 +65,11 @@
         document
           .getElementById("node-list")
           .addEventListener("click", function (event) {
-            if (event.target.tagName === "LI") {
+            if (event.target.tagName === "li") {
               const blockName = event.target.textContent
-                // .trim()
-                // .replace(/\s+/g, "_")
-                // .toLowerCase();
+                .trim()
+                .replace(/\s+/g, "_")
+                .toLowerCase();
               // window.location.href = `${blockName}.html`;
               window.location.href = `${blockName}.html`;
             }
