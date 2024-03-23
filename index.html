@@ -19,11 +19,11 @@
           <button class="dropbtn" id="select-node-btn">Select node</button>
           <div class="dropdown-content" id="node-list">
             <ul>
-              <li>A Block</li>
-              <li>F Block_10f</li>
-              <li>F Block_15f</li>
-              <li>N Block</li>
-              <li>L Block</li>
+              <li id="A_Block">A Block</li>
+              <li id="F_Block_10f">F Block_10f</li>
+              <li id="F_Block_15f">F Block_15f</li>
+              <li id="N_Block">N Block</li>
+              <li id="L_block">L Block</li>
             </ul>
           </div>
         </div>
@@ -62,19 +62,30 @@
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         // Add event listener for the node list
-        document
+        // document
+        //   .getElementById("node-list")
+        //   .addEventListener("click", function (event) {
+        //     if (event.target.tagName === "LI") {
+        //       const blockName = event.target.textContent
+        //         .trim()
+        //         .replace(/\s+/g, "_")
+        //         .toLowerCase();
+        //       // window.location.href = `${blockName}.html`;
+        //       window.location.href = `${blockName}.html`;
+        //     }
+        //   });
+
+        // event list click based on ids
+      document
           .getElementById("node-list")
           .addEventListener("click", function (event) {
             if (event.target.tagName === "LI") {
-              const blockName = event.target.textContent
-                .trim()
-                .replace(/\s+/g, "_")
-                .toLowerCase();
-              // window.location.href = `${blockName}.html`;
-              window.location.href = `${blockName}.html`;
+              const parameter1 = event.target.id;
+              window.location.href = `${parameter1}.html`;
             }
           });
 
+        
         // Add event listener for the parameter list
         document
           .getElementById("parameter-list")
