@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outdoor Air Quality Data Visualization</title>
+    <!-- Add Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Add styling -->
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        position: relative; /* Make the body container for absolute positioning */
+      }
+      .plot-container {
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        background-color: rgb(255, 255, 255);
+        margin: 20px auto; /* Center the plot horizontally */
+        padding-right: 100px; /* Add padding on the right side */
+        position: relative; /* Make the plot container relative for positioning */
+      }
+      h1 {
+        color: #4285f4;
+        text-align: center;
+      }
+      /* Responsive styles */
+      @media only screen and (max-width: 600px) {
+        .plot-container {
+          margin: 10px auto; /* Center the plot horizontally */
+          padding-right: 50px; /* Add padding on the right side */
+        }
+      }
+      @media only screen and (min-width: 601px) and (max-width: 900px) {
+        .plot-container {
+          margin: 15px auto; /* Center the plot horizontally */
+          padding-right: 75px; /* Add padding on the right side */
+        }
+      }
+      .lastTimestamp {
+        position: absolute; /* Position the last timestamp absolutely */
+        font-size: 14px;
+        bottom: 10px;
+        left: 50%; /* Center horizontally */
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Plotly Plot Containers -->
+    <div id="plot1" class="plot-container"></div>
+    <div id="plot2" class="plot-container"></div>
+    <div id="plot3" class="plot-container"></div>
+    <div id="plot4" class="plot-container"></div>
+    <div id="plot5" class="plot-container"></div>
+    <!-- Script for fetching and plotting data -->
+    <script>
+      function fetchDataAndPlot1(
+        apiKey,
+        channelId,
+        plotId,
+        title,
+        m_pm25,
+        c_pm25,
+        m_pm10,
+        c_pm10,
+        m_db,
+        c_db
+      ) {
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&results=10000000`;
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const feeds = data.feeds;
+
+            // Group data into 15-minute intervals and calculate average values
+            const groupedData = groupData(feeds, 15);
+
+            const timestamps = groupedData.map((group) => group.timestamp);
+            const pm25 = groupedData.map((group) => group.pm25Avg);
+            const pm10 = groupedData.map((group) => group.pm10Avg);
+            const CO2 = groupedData.map((group) => group.CO2Avg);
+            const dB = groupedData.map((group) => group.dBAvg);
+            // Apply coefficients to modify data
+            const modified_pm25 = pm25.map((value) => value * m_pm25 + c_pm25);
+            const modified_pm10 = pm10.map((value) => value * m_pm10 + c_pm10);
+            const modified_db = dB.map((value) => value * m_db + c_db);
+            const trace_pm25 = {
+              x: timestamps,
+              y: modified_pm25,
+              name: "PM2.5(µg/m3)",
+              type: "line",
+            };
+            const trace_pm10 = {
+              x: timestamps,
+              y: modified_pm10,
+              name: "PM10(µg/m3)",
+              type: "line",
+            };
+            const trace_CO2 = {
+              x: timestamps,
+              y: CO2,
+              name: "CO2",
+              type: "line",
+            };
+            const trace_dB = {
+              x: timestamps,
+              y: modified_db,
+              name: "dB Value",
+              type: "line",
+            };
+            const layout = {
+              title: title,
+              xaxis: {
+                title: "Timestamp",
+                type: "category",
+                tickformat: "%d-%m-%Y %H:%M",
+                rangeselector: {
+                  buttons: [
+                    {
+                      count: 1,
+                      label: "1d",
+                      step: "day",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 6,
+                      label: "1w",
+                      step: "day",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 1,
+                      label: "1m",
+                      step: "month",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 6,
+                      label: "6m",
+                      step: "month",
+                      stepmode: "backward",
+                    },
+                    { step: "all" },
+                  ],
+                },
+                rangeslider: {
+                  visible: true,
+                  bgcolor: "rgba(0,0,0,0)",
+                  bordercolor: "rgba(0,0,0,0)",
+                },
+              },
+              yaxis: { title: "Values" },
+              showlegend: true,
+              height: 650,
+              width: 1150,
+            };
+
+            Plotly.newPlot(
+              plotId,
+              [trace_pm25, trace_pm10, trace_CO2, trace_dB],
+              layout
+            );
+
+            const lastTimestamp = timestamps[timestamps.length - 1];
+            const lastTimestampElement = document.createElement("div");
+            lastTimestampElement.classList.add("lastTimestamp");
+            lastTimestampElement.innerText = `Last Data_Entry_at: ${lastTimestamp}`;
+            document.getElementById(plotId).appendChild(lastTimestampElement);
+          })
+          .catch((error) => console.error("Error fetching data:", error));
+      }
+
+      // Function to group data into specified time intervals and calculate average values
+      function groupData(data, intervalInMinutes) {
+        const groupedData = [];
+        let currentIntervalStart = new Date(data[0].created_at);
+        let pm25Sum = 0;
+        let pm10Sum = 0;
+        let CO2Sum = 0;
+        let dBSum = 0;
+        let count = 0;
+
+        data.forEach((feed) => {
+          const timestamp = new Date(feed.created_at);
+          if (
+            timestamp - currentIntervalStart <
+            intervalInMinutes * 60 * 1000
+          ) {
+            // Still within the current interval
+            pm25Sum += parseFloat(feed.field1);
+            pm10Sum += parseFloat(feed.field2);
+            CO2Sum += parseFloat(feed.field5);
+            dBSum += parseFloat(feed.field6);
+            count++;
+          } else {
+            // Move to the next interval
+            groupedData.push({
+              timestamp: formatTimestamp(currentIntervalStart),
+              pm25Avg: pm25Sum / count,
+              pm10Avg: pm10Sum / count,
+              CO2Avg: CO2Sum / count,
+              dBAvg: dBSum / count,
+            });
+            // Reset sums and count for the new interval
+            pm25Sum = parseFloat(feed.field1);
+            pm10Sum = parseFloat(feed.field2);
+            CO2Sum = parseFloat(feed.field5);
+            dBSum = parseFloat(feed.field6);
+            count = 1;
+            currentIntervalStart = timestamp;
+          }
+        });
+
+        // Add the last interval
+        groupedData.push({
+          timestamp: formatTimestamp(currentIntervalStart),
+          pm25Avg: pm25Sum / count,
+          pm10Avg: pm10Sum / count,
+          CO2Avg: CO2Sum / count,
+          dBAvg: dBSum / count,
+        });
+
+        return groupedData;
+      }
+
+      // Function to format timestamp as DD-MM-YYYY HH:MM
+      function formatTimestamp(timestamp) {
+        const year = timestamp.getFullYear();
+        const month = ("0" + (timestamp.getMonth() + 1)).slice(-2);
+        const day = ("0" + timestamp.getDate()).slice(-2);
+        const hours = ("0" + timestamp.getHours()).slice(-2);
+        const minutes = ("0" + timestamp.getMinutes()).slice(-2);
+        return `${day}-${month}-${year} ${hours}:${minutes}`;
+      }
+
+      fetchDataAndPlot1(
+        "7L23WKGUH5AHCAUK",
+        "2292557",
+        "plot2",
+        "Air Quality Data - F Block 10th Floor",
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      );
+      fetchDataAndPlot1(
+        "VUCOXASWGKY69XJ1",
+        "2292544",
+        "plot3",
+        "Air Quality Data - F Block 15th Floor",
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      );
+    </script>
+    <script>
+      function fetchDataAndPlot2(
+        apiKey,
+        channelId,
+        plotId,
+        title,
+        m_pm25,
+        c_pm25,
+        m_pm10,
+        c_pm10
+      ) {
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&results=10000000`;
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const feeds = data.feeds;
+
+            // Group data into 15-minute intervals and calculate average values
+            const groupedData = groupData1(feeds, 15);
+
+            const timestamps = groupedData.map((group) => group.timestamp);
+            const pm25 = groupedData.map((group) => group.pm25Avg);
+            const pm10 = groupedData.map((group) => group.pm10Avg);
+
+            // Apply coefficients to modify data
+            const modified_pm25 = pm25.map((value) => value * m_pm25 + c_pm25);
+            const modified_pm10 = pm10.map((value) => value * m_pm10 + c_pm10);
+
+            const trace_pm25 = {
+              x: timestamps,
+              y: modified_pm25,
+              name: "PM2.5(µg/m3)",
+              type: "line",
+            };
+            const trace_pm10 = {
+              x: timestamps,
+              y: modified_pm10,
+              name: "PM10(µg/m3)",
+              type: "line",
+            };
+
+            const layout = {
+              title: title,
+              xaxis: {
+                title: "Timestamp",
+                type: "category",
+                tickformat: "%d-%m-%Y %H:%M",
+                rangeselector: {
+                  buttons: [
+                    {
+                      count: 1,
+                      label: "1d",
+                      step: "day",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 6,
+                      label: "1w",
+                      step: "day",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 1,
+                      label: "1m",
+                      step: "month",
+                      stepmode: "backward",
+                    },
+                    {
+                      count: 6,
+                      label: "6m",
+                      step: "month",
+                      stepmode: "backward",
+                    },
+                    { step: "all" },
+                  ],
+                },
+                rangeslider: {
+                  visible: true,
+                  bgcolor: "rgba(0,0,0,0)",
+                  bordercolor: "rgba(0,0,0,0)",
+                },
+              },
+              yaxis: { title: "Values" },
+              showlegend: true,
+              height: 650,
+              width: 1150,
+            };
+
+            Plotly.newPlot(plotId, [trace_pm25, trace_pm10], layout);
+
+            const lastTimestamp = timestamps[timestamps.length - 1];
+            const lastTimestampElement = document.createElement("div");
+            lastTimestampElement.classList.add("lastTimestamp");
+            lastTimestampElement.innerText = `Last Data_Entry_at: ${lastTimestamp}`;
+            document.getElementById(plotId).appendChild(lastTimestampElement);
+          })
+          .catch((error) => console.error("Error fetching data:", error));
+      }
+
+      // Function to group data into specified time intervals and calculate average values
+      function groupData1(data, intervalInMinutes) {
+        const groupedData = [];
+        let currentIntervalStart = new Date(data[0].created_at);
+        let pm25Sum = 0;
+        let pm10Sum = 0;
+        let count = 0;
+
+        data.forEach((feed) => {
+          const timestamp = new Date(feed.created_at);
+          if (
+            timestamp - currentIntervalStart <
+            intervalInMinutes * 60 * 1000
+          ) {
+            // Still within the current interval
+            pm25Sum += parseFloat(feed.field2);
+            pm10Sum += parseFloat(feed.field1);
+            count++;
+          } else {
+            // Move to the next interval
+            groupedData.push({
+              timestamp: formatTimestamp(currentIntervalStart),
+              pm25Avg: pm25Sum / count,
+              pm10Avg: pm10Sum / count,
+            });
+            // Reset sums and count for the new interval
+            pm25Sum = parseFloat(feed.field2);
+            pm10Sum = parseFloat(feed.field1);
+            count = 1;
+            currentIntervalStart = timestamp;
+          }
+        });
+
+        // Add the last interval
+        groupedData.push({
+          timestamp: formatTimestamp(currentIntervalStart),
+          pm25Avg: pm25Sum / count,
+          pm10Avg: pm10Sum / count,
+        });
+
+        return groupedData;
+      }
+
+      // Fetch and plot data for each plot with coefficients
+      fetchDataAndPlot2(
+        "SUQ8Q0XA5GDFSZPR",
+        "2289480",
+        "plot1",
+        "Air Quality Data - A Block 9th Floor",
+        1,
+        0,
+        1,
+        0
+      );
+      fetchDataAndPlot2(
+        "6OVMJRPP2FSX69XB",
+        "2289484",
+        "plot4",
+        "Air Quality Data - L Block 17th Floor",
+        1,
+        0,
+        1,
+        0
+      );
+
+      fetchDataAndPlot2(
+        "92WJ4GLX4RQEYITC",
+        "1310984",
+        "plot5",
+        "Air Quality Data - N Block 4th Floor",
+        1,
+        0,
+        1,
+        0
+      );
+    </script>
+  </body>
+</html>

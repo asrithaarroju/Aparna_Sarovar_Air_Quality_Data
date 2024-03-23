@@ -1,0 +1,175 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scroll bars on the entire page */
+}
+
+/* Add your CSS styles here */
+
+#title {
+  background-color: #0073e6;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px; /* Adjust the distance between buttons */
+}
+
+.header-button {
+  background-color: transparent; /* Remove background */
+  color: white;
+  border: 1px solid white; /* Add outline */
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.header-button:hover {
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.2
+  ); /* Change background color on hover */
+}
+
+#map {
+  height: calc(
+    100vh - 120px
+  ); /* Adjusted height to accommodate the title's height, button's height and move it 20px below */
+  width: 100vw; /* Set width to 100vw instead of 100% */
+  padding-top: 20px; /* Move the header 20px below */
+}
+
+.custom-label {
+  font-weight: lighter;
+  font-size: 15px; /* Increase font size */
+}
+
+.hidden {
+  display: none;
+}
+
+#node-list,
+#parameter-list,
+#total-list {
+  position: absolute;
+  background-color: #ffffff;
+  z-index: 1000;
+  padding: 10px;
+  color: black; /* Text color */
+}
+
+#node-list ul,
+#parameter-list ul,
+#total-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.node-item {
+  cursor: pointer;
+  font-size: 12px; /* Decrease font size */
+}
+
+.node-item:hover,
+#parameter-list ul li:hover,
+#total-list ul li:hover {
+  background-color: #c6e9f7;
+}
+
+/* Add this CSS for top navigation */
+.topnav {
+  overflow: hidden;
+  background-color: #0073e6;
+}
+
+.dropdown {
+  float: left;
+  overflow: hidden;
+}
+
+/* Drop-down Button */
+.dropbtn {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  outline: none;
+  color: white;
+  font-family: inherit;
+  margin: 0;
+  cursor: pointer;
+  margin-right: 10px; /* Add margin between buttons */
+}
+
+.dropbtn:hover {
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.2
+  ); /* Change background color on hover */
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 80px;
+  z-index: 1;
+  top: 60px; /* Adjust the distance below the buttons */
+}
+
+.dropdown-content ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown-content ul li {
+  cursor: pointer;
+  padding: 10px;
+  font-size: 14px; /* Decrease font size */
+}
+
+.dropdown-content ul li:hover {
+  background-color: #c6e9f7;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* Header Button */
+.header-button {
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-family: inherit;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px; /* Add margin between buttons */
+}
+
+.header-button:hover {
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.2
+  ); /* Change background color on hover */
+}

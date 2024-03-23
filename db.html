@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Air quality data - dB</title>
+    <!-- Add Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Add styling -->
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f3f3f3;
+      }
+
+      .plot-container {
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        background-color: rgb(255, 255, 255); /* Sky blue background */
+        margin: 20px;
+      }
+
+      h1 {
+        color: #f6f7f8;
+        text-align: center;
+      }
+
+      /* Responsive styles */
+      @media only screen and (max-width: 600px) {
+        .plot-container {
+          margin: 10px;
+        }
+      }
+
+      @media only screen and (min-width: 601px) {
+        .plot-container {
+          margin: 15px;
+        }
+      }
+
+      .last-timestamp {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 14px;
+      }
+
+      .legend-container {
+        position: absolute;
+        top: 50px;
+        right: 10px;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      .legend-item {
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Plotly Plot Container -->
+    <div id="mergedPlot" class="plot-container"></div>
+
+    <!-- Script for fetching and plotting data -->
+    <script>
+      // Function to fetch and plot data for a given channel
+      function fetchDataAndPlot(channelId, apiKey, location, field, m, c) {
+        // Calculate the date range for the last 4 days
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 3);
+
+        // Convert dates to ThingSpeak format
+        const startDateString = startDate.toISOString().slice(0, 10);
+        const endDateString = endDate.toISOString().slice(0, 10);
+
+        // Adjust the average parameter to 1800 for 30-minute averaging
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${apiKey}&start=${startDateString}&end=${endDateString}&average=900`;
+
+        return fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            const feeds = data.feeds;
+
+            // Initialize arrays to store 30-minute averaged data
+            const halfHourlyTimestamps = [];
+            const halfHourlyValues = [];
+
+            let currentHalfHour = null;
+            let sum = 0;
+            let count = 0;
+
+            // Loop through feeds to calculate 30-minute averages
+            feeds.forEach((feed) => {
+              const date = new Date(feed.created_at);
+              const halfHour = Math.floor(date.getMinutes() / 15); // Divide minutes into 30-minute intervals
+
+              if (currentHalfHour === null) {
+                currentHalfHour = halfHour;
+              }
+
+              if (currentHalfHour === halfHour) {
+                sum += parseFloat(feed[field]);
+                count++;
+              } else {
+                const averageValue = sum / count;
+                halfHourlyTimestamps.push(
+                  date.toISOString().slice(0, 19).replace("T", " ")
+                );
+                halfHourlyValues.push(averageValue);
+
+                currentHalfHour = halfHour;
+                sum = parseFloat(feed[field]);
+                count = 1;
+              }
+            });
+
+            // Push the last 30 minutes' average value
+            const lastAverageValue = sum / count;
+            halfHourlyTimestamps.push(feeds[feeds.length - 1].created_at);
+            halfHourlyValues.push(lastAverageValue);
+
+            // Apply coefficients to modify data
+            const modifiedValues = halfHourlyValues.map(
+              (value) => value * m + c
+            );
+
+            // Create Plotly trace for the specified field
+            return {
+              x: halfHourlyTimestamps,
+              y: modifiedValues,
+              name: `${location}`,
+              type: "line",
+            };
+          })
+          .catch((error) =>
+            console.error(`Error fetching data for Channel ${location}:`, error)
+          );
+      }
+
+      // Fetch data for each channel and field
+      const promises = [
+        fetchDataAndPlot(
+          "2292557",
+          "7L23WKGUH5AHCAUK",
+          "F Block 10th Floor",
+          "field6",
+          0.12266853,
+          15.1114182912845
+        ),
+        fetchDataAndPlot(
+          "2292544",
+          "VUCOXASWGKY69XJ1",
+          "F Block 15th Floor",
+          "field6",
+          6.04561332,
+          34.1616519174041
+        ),
+      ];
+
+      Promise.all(promises)
+        .then((traces) => {
+          // Create layout for the merged plot
+          const layout = {
+            title: "Sound (dB)",
+            xaxis: { title: "Timestamp", type: "category" },
+            yaxis: { title: "Values" },
+            showlegend: true,
+            height: 650,
+            width: 1150,
+            xaxis: { rangeslider: { visible: true } },
+          };
+
+          // Plot the merged chart
+          Plotly.newPlot("mergedPlot", traces, layout);
+        })
+        .catch((error) => console.error("Error fetching data:", error));
+    </script>
+  </body>
+</html>

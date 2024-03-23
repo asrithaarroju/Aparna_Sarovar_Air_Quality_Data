@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aparna Sarovar</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+  </head>
+  <body>
+    <div id="title">
+      Aparna Sarovar Air Quality Monitoring
+      <nav class="topnav">
+        <div class="dropdown">
+          <button class="dropbtn" id="select-node-btn">Select node</button>
+          <div class="dropdown-content" id="node-list">
+            <ul>
+              <li>A Block</li>
+              <li>F Block_10f</li>
+              <li>F Block_15f</li>
+              <li>N Block</li>
+              <li>L Block</li>
+            </ul>
+          </div>
+        </div>
+        <div class="dropdown">
+          <button class="dropbtn" id="parameter-wise-btn">
+            Parameter wise
+          </button>
+          <div class="dropdown-content hidden" id="parameter-list">
+            <ul>
+              <li id="pm10">PM10 (µg/m³)</li>
+              <li id="pm2">PM2.5 (µg/m³)</li>
+              <li id="temperature">Temperature (°C)</li>
+              <li id="humidity">Humidity (%)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="dropdown">
+          <button class="dropbtn" id="total-data-btn">Total data</button>
+          <div class="dropdown-content hidden" id="total-list">
+            <ul>
+              <li>Calibrated data</li>
+              <li>Raw data</li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </div>
+    <div id="map"></div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Your custom JavaScript -->
+    <script src="script.js"></script>
+
+    <!-- JavaScript for redirecting to specific block data files -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Add event listener for the node list
+        document
+          .getElementById("node-list")
+          .addEventListener("click", function (event) {
+            if (event.target.tagName === "LI") {
+              const blockName = event.target.textContent
+                .trim()
+                .replace(/\s+/g, "_")
+                .toLowerCase();
+              window.location.href = `${blockName}.html`;
+            }
+          });
+
+        // Add event listener for the parameter list
+        document
+          .getElementById("parameter-list")
+          .addEventListener("click", function (event) {
+            if (event.target.tagName === "LI") {
+              const parameter = event.target.id;
+              window.location.href = `${parameter}.html`;
+            }
+          });
+
+        // Add event listener for the total list
+        document
+          .getElementById("total-list")
+          .addEventListener("click", function (event) {
+            if (event.target.tagName === "LI") {
+              const action = event.target.textContent
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, "_");
+              window.location.href = `${action}.html`;
+            }
+          });
+      });
+    </script>
+  </body>
+</html>
