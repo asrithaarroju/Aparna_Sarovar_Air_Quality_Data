@@ -65,7 +65,7 @@
         document
           .getElementById("node-list")
           .addEventListener("click", function (event) {
-            if (event.target.tagName === "li") {
+            if (event.target.tagName === "LI") {
               const blockName = event.target.textContent
                 .trim()
                 .replace(/\s+/g, "_")
